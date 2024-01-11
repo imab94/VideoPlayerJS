@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="mystyles.css">
+    <title>Beautiful Video Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src='https://kit.fontawesome.com/a076d05399.js' crossorigin='anonymous'></script>
+</head>
+<body>
+    <body>
+        <div class="video-player-container">
+            <video id="myVid" poster="poster.jpg">
+                <source src="goldfinches_eating.mp4" type="video/mp4">
+                Sorry, your browser does not support HTML5 video.
+            </video>
+            <div class="controls">
+                <!-- <button class="backcontrol-btn" id="backwardBtn" onclick="seekVideo(-5)"> -->
+                    <img id="backwardBtn" src="backward_btn.png" alt="">
+                <!-- </button> -->
+                <button class="control-btn" id="playBtn">
+                    <i class="fa fa-play"></i>
+                </button>
+                <button class="control-btn" id="stopBtn">
+                    <i class="fa fa-stop"></i>
+                </button>
+                <!-- <button class="control-btn" id="forwardBtn" onclick="seekVideo(5)">
+                    <i class="fa fa-forward"></i>
+                </button> -->
+                <img id="forwardBtn" src="download.png" alt="">
+                <button class="control-btn" id="VolumeBtn">
+                    <i class='fas fa-volume-up'></i>
+                </button>
+                <button class="control-btn" id="fullscreenBtn">
+                    <i class="fa fa-expand"></i>
+                </button>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <span class="time-tooltip" id="timeTooltip">0:00</span>
+            </div>
+            <div class="times-container">
+                <div class="times" id="currentTime">0:00</div>
+                <div class="times" id="durationTime">0:00</div>
+            </div>
+        </div>
+        <script>
+            const video = document.getElementById("myVid");
+            const playBtn = document.getElementById("playBtn");
+            const stopBtn = document.getElementById("stopBtn");
+            const progressBar = document.getElementById("progressBar");
+            const VolumeBtn = document.getElementById("VolumeBtn");
+            const currentTimeElem = document.getElementById('currentTime');
+            const durationTimeElem = document.getElementById('durationTime');
+            const progressBarContainer = document.querySelector('.progress-bar-container');
+            const timeTooltip = document.getElementById('timeTooltip');
+            const backwardBtn = document.getElementById('backwardBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            let savedProgress = 0; // Variable to store the paused progress
+            const pauseIconClass = "fa-pause";
+            const playIconClass = "fa-play";
+            const volumeMutBtnClass =  "fa fa-volume-mute";
+            const volumeUpBtnClass =  "fa fa-volume-up";
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            let isFullScreen = false;
+        
+            playBtn.addEventListener("click", function () {
+                if (video.paused) {
+                    video.play();
+                    playBtn.innerHTML = `<i class="fa ${pauseIconClass}"></i>`;
+                } else {
+                    video.pause();
+                    playBtn.innerHTML = `<i class="fa ${playIconClass}"></i>`;
+                }
+            });
+        
+            stopBtn.addEventListener("click", function () {
+                video.pause();
+                video.currentTime = 0;
+                playBtn.innerHTML = `<i class="fa ${playIconClass}"></i>`;
+            });
+
+            backwardBtn.addEventListener('click', function () {
+                seekVideo(-10); // for Backward -10 seconds//
+            });
+
+            forwardBtn.addEventListener('click', function () {
+                seekVideo(10); // for Forward +10 seconds//
+            });
+        
+            function seekVideo(seconds) {
+                video.currentTime += seconds;
+            }
+        
+            video.addEventListener('loadedmetadata', () => {
+                const duration = video.duration;
+                durationTimeElem.textContent = formatTime(duration);
+            });
+        
+            video.addEventListener('timeupdate', () => {
+                const currentTime = video.currentTime;
+                const duration = video.duration;
+        
+                currentTimeElem.textContent = formatTime(currentTime);
+                updateProgressBar(currentTime, duration);
+            });
+        
+            function formatTime(time) {
+                const minutes = Math.floor(time / 60);
+                const seconds = Math.floor(time % 60);
+                return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            }
+        
+            function updateProgressBar(currentTime, duration) {
+                const progress = (currentTime / duration) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+        
+            // Update progress bar to saved progress when video is played
+            video.addEventListener("play", () => {
+                progressBar.style.width = savedProgress + "%";
+            });
+            // Store progress when video is paused
+            video.addEventListener("pause", () => {
+                const currentTime = video.currentTime;
+                const duration = video.duration;
+                savedProgress = (currentTime / duration) * 100;
+            });
+        
+            VolumeBtn.addEventListener("click", () => {
+                if (!video.muted) {
+                    VolumeBtn.innerHTML = `<i class="fa ${volumeMutBtnClass}"></i>`;
+                    video.muted = true;
+                } else {
+                    VolumeBtn.innerHTML = `<i class="fa ${volumeUpBtnClass}"></i>`;
+                    video.muted = false;
+                }
+            });
+        
+            progressBarContainer.addEventListener('click', (event) => {
+                const progressBarWidth = progressBarContainer.offsetWidth;
+                const clickX = event.clientX - progressBarContainer.getBoundingClientRect().left;
+                const duration = video.duration;
+        
+                const newTime = (clickX / progressBarWidth) * duration;
+                video.currentTime = newTime;
+            });
+        
+            progressBarContainer.addEventListener('mousemove', (event) => {
+                const progressBarWidth = progressBarContainer.offsetWidth;
+                const hoverX = event.clientX - progressBarContainer.getBoundingClientRect().left;
+                const duration = video.duration;
+                const hoverTime = (hoverX / progressBarWidth) * duration;
+                timeTooltip.textContent = formatTime(hoverTime);
+                timeTooltip.style.left = `${hoverX}px`;
+            });
+        
+            // reset the progressbar state 
+            progressBarContainer.addEventListener('mouseout', () => {
+                timeTooltip.textContent = '';
+            });
+
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+            // Full Screen Mode Of Videos...
+            function toggleFullScreen() {
+                if (!isFullScreen) {
+                    if (video.requestFullscreen) {
+                        video.requestFullscreen();
+                    } else if (video.mozRequestFullScreen) {
+                        video.mozRequestFullScreen();
+                    } else if (video.webkitRequestFullscreen) {
+                        video.webkitRequestFullscreen();
+                    } else if (video.msRequestFullscreen) {
+                        video.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                }
+                isFullScreen = !isFullScreen;
+            }
+        </script>
+        
+</body>
+</html>
